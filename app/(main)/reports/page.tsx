@@ -67,22 +67,30 @@ export default function ReportsPage() {
     
     // Get page width
     const pageWidth = doc.internal.pageSize.getWidth()
+
+    try {
+      // Add logo - using direct image path
+      const img = new Image()
+      img.src = '/linkproductivelogo.jpg'
+      // Position logo on the left side of the header
+      doc.addImage(img, 'JPEG', 10, 5, 50, 30) // Adjusted size and position
+    } catch (error) {
+      console.error('Error adding logo:', error)
+    }
     
-    // Add centered title
+    // Add centered title (moved to the right to accommodate logo)
     doc.setTextColor(255, 255, 255) // Change text color
     doc.setFontSize(24)
-    doc.text("SiNaik App", pageWidth/2, 20, { align: "center" })
+    doc.text("SiNaik App", pageWidth/2 + 25, 20, { align: "center" })
     
     // Add centered subtitle
     doc.setFontSize(14)
-    doc.text("Laporan Keuangan", pageWidth/2, 30, { align: "center" })
+    doc.text("Laporan Keuangan", pageWidth/2 + 25, 30, { align: "center" })
     
-    // Reset text color to black
-    doc.setTextColor(0, 0, 0)
-    
-    // Add date
+    // Add date with right alignment
+    doc.setTextColor(0, 0, 0) // Reset text color to black
     doc.setFontSize(10)
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 50)
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, pageWidth - 20, 50, { align: "right" })
     
     let y = 70 // Start content after header
     
