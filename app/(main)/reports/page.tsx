@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { 
@@ -13,8 +13,10 @@ import {
 } from "@/components/ui/table"
 import { Download, FileText } from "lucide-react"
 import { jsPDF } from "jspdf"
+import { getAllCalculations, getCalculationsByDateRange, getCalculationsByType } from "@/lib/db"
 
 interface CalculationRecord {
+  id: number
   type: string
   date: string
   inputs: Record<string, any>
@@ -24,17 +26,51 @@ interface CalculationRecord {
 export default function ReportsPage() {
   const [dateRange, setDateRange] = useState("all")
   const [calculationType, setCalculationType] = useState("all")
+  const [calculations, setCalculations] = useState<CalculationRecord[]>([])
 
-  // Mock data - replace with actual data from your database
-  const calculations: CalculationRecord[] = [
-    {
-      type: "Gross Profit",
-      date: "2024-03-20",
-      inputs: { revenue: 1000, costOfGoodsSold: 600 },
-      results: { grossProfit: 400, profitMargin: 40 }
-    },
-    // Add more records
-  ]
+  useEffect(() => {
+    loadCalculations()
+  }, [dateRange, calculationType])
+
+  const loadCalculations = async () => {
+    try {
+      let data
+      if (dateRange === "all" && calculationType === "all") {
+        data = await getAllCalculations()
+      } else if (dateRange !== "all") {
+        const now = new Date()
+        let startDate = new Date()
+        
+        switch (dateRange) {
+          case "today":
+            startDate.setHours(0, 0, 0, 0)
+            break
+          case "week":
+            startDate.setDate(now.getDate() - 7)
+            break
+          case "month":
+            startDate.setMonth(now.getMonth() - 1)
+            break
+        }
+        
+        data = await getCalculationsByDateRange(startDate, now)
+      } else if (calculationType !== "all") {
+        data = await getCalculationsByType(calculationType)
+      }
+
+      if (!data) return
+
+      setCalculations(data.map(calc => ({
+        id: Number(calc.id),
+        type: calc.type,
+        date: new Date(calc.date).toLocaleDateString(),
+        inputs: calc.inputs as Record<string, any>,
+        results: calc.results as Record<string, any>
+      })))
+    } catch (error) {
+      console.error("Error loading calculations:", error)
+    }
+  }
 
   const exportToCSV = () => {
     const headers = ["Type", "Date", "Inputs", "Results"]
@@ -62,89 +98,79 @@ export default function ReportsPage() {
     const doc = new jsPDF()
     
     // Add company header
-    doc.setFillColor(52, 152, 219) // Change header background color
+    doc.setFillColor(52, 152, 219)
     doc.rect(0, 0, 220, 40, "F")
     
     // Get page width
     const pageWidth = doc.internal.pageSize.getWidth()
 
     try {
-      // Add logo - using direct image path
+      // Add logo
       const img = new Image()
       img.src = '/linkproductivelogo.jpg'
-      // Position logo on the left side of the header
-      doc.addImage(img, 'JPEG', 10, 5, 50, 30) // Adjusted size and position
+      doc.addImage(img, 'JPEG', 10, 5, 50, 30)
     } catch (error) {
       console.error('Error adding logo:', error)
     }
     
-    // Add centered title (moved to the right to accommodate logo)
-    doc.setTextColor(255, 255, 255) // Change text color
+    // Add title and subtitle
+    doc.setTextColor(255, 255, 255)
     doc.setFontSize(24)
     doc.text("SiNaik App", pageWidth/2 + 25, 20, { align: "center" })
     
-    // Add centered subtitle
     doc.setFontSize(14)
     doc.text("Laporan Keuangan", pageWidth/2 + 25, 30, { align: "center" })
     
-    // Add date with right alignment
-    doc.setTextColor(0, 0, 0) // Reset text color to black
+    // Add date
+    doc.setTextColor(0, 0, 0)
     doc.setFontSize(10)
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, pageWidth - 20, 50, { align: "right" })
     
-    let y = 70 // Start content after header
-    
+    let y = 70
+
     calculations.forEach((calc, index) => {
-      // Check if we need a new page
       if (y > 250) {
         doc.addPage()
         y = 20 // Reset Y position on new page
       }
       
-      // Add calculation header with background
-      doc.setFillColor(240, 240, 240) // Light gray background
+      doc.setFillColor(240, 240, 240)
       doc.rect(15, y-5, 180, 10, "F")
       doc.setFontSize(12)
       doc.setFont("helvetica", "bold")
       doc.text(`${calc.type} - ${calc.date}`, 20, y)
-      y += 15 // Adjust vertical spacing
+      y += 15
       
-      // Add inputs section
       doc.setFont("helvetica", "bold")
       doc.text("Inputs:", 20, y)
       doc.setFont("helvetica", "normal")
       y += 10
       
-      // Create a table-like structure for inputs
       Object.entries(calc.inputs).forEach(([key, value]) => {
         doc.text(`${key}:`, 30, y)
         doc.text(`${value}`, 100, y)
         y += 7
       })
       
-      y += 5 // Add some space
+      y += 5
       
-      // Add results section
       doc.setFont("helvetica", "bold")
       doc.text("Results:", 20, y)
       doc.setFont("helvetica", "normal")
       y += 10
       
-      // Create a table-like structure for results
       Object.entries(calc.results).forEach(([key, value]) => {
         doc.text(`${key}:`, 30, y)
         doc.text(`${value}`, 100, y)
         y += 7
       })
       
-      // Add separator line
       y += 5
-      doc.setDrawColor(200, 200, 200) // Light gray line
+      doc.setDrawColor(200, 200, 200)
       doc.line(20, y, 190, y)
-      y += 15 // Space after separator
+      y += 15
     })
     
-    // Add footer
     const pageCount = doc.getNumberOfPages()
     for(let i = 1; i <= pageCount; i++) {
       doc.setPage(i)
