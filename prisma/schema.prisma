@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("postgresql://postgres:Faturahman123@localhost:5432/business_calculator")
+}
+
+model Calculation {
+  id        String   @id @default(cuid())
+  type      String   // "gross-profit", "price-per-unit", "discount"
+  date      DateTime @default(now())
+  inputs    Json
+  results   Json
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String       @unique
+  password     String
+  name         String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  calculations Calculation[]
+} 
