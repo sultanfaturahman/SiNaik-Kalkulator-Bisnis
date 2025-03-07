@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/table"
 import { Download, FileText } from "lucide-react"
 import { jsPDF } from "jspdf"
-import { getAllCalculations, getCalculationsByDateRange, getCalculationsByType } from "@/lib/db"
 
 interface CalculationRecord {
   id: number
@@ -34,38 +33,23 @@ export default function ReportsPage() {
 
   const loadCalculations = async () => {
     try {
-      let data
-      if (dateRange === "all" && calculationType === "all") {
-        data = await getAllCalculations()
-      } else if (dateRange !== "all") {
-        const now = new Date()
-        let startDate = new Date()
-        
-        switch (dateRange) {
-          case "today":
-            startDate.setHours(0, 0, 0, 0)
-            break
-          case "week":
-            startDate.setDate(now.getDate() - 7)
-            break
-          case "month":
-            startDate.setMonth(now.getMonth() - 1)
-            break
-        }
-        
-        data = await getCalculationsByDateRange(startDate, now)
-      } else if (calculationType !== "all") {
-        data = await getCalculationsByType(calculationType)
-      }
-
+      const params = new URLSearchParams({
+        dateRange: dateRange,
+        type: calculationType
+      })
+      
+      const response = await fetch(`/api/calculations?${params}`)
+      const { data, error } = await response.json()
+      
+      if (error) throw new Error(error)
       if (!data) return
 
-      setCalculations(data.map(calc => ({
+      setCalculations(data.map((calc: any) => ({
         id: Number(calc.id),
         type: calc.type,
         date: new Date(calc.date).toLocaleDateString(),
-        inputs: calc.inputs as Record<string, any>,
-        results: calc.results as Record<string, any>
+        inputs: calc.inputs,
+        results: calc.results
       })))
     } catch (error) {
       console.error("Error loading calculations:", error)
@@ -131,7 +115,7 @@ export default function ReportsPage() {
     calculations.forEach((calc, index) => {
       if (y > 250) {
         doc.addPage()
-        y = 20 // Reset Y position on new page
+        y = 20
       }
       
       doc.setFillColor(240, 240, 240)

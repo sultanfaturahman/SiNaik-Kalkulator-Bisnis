@@ -1,30 +1,21 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("postgresql://postgres:Faturahman123@localhost:5432/business_calculator")
+  url      = env("DATABASE_URL")
 }
 
 model Calculation {
-  id        String   @id @default(cuid())
-  type      String   // "gross-profit", "price-per-unit", "discount"
+  id        Int      @id @default(autoincrement())
+  type      String
   date      DateTime @default(now())
   inputs    Json
   results   Json
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-}
-
-model User {
-  id           String        @id @default(cuid())
-  email        String       @unique
-  password     String
-  name         String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  calculations Calculation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 } 

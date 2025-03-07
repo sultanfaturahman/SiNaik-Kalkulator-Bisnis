@@ -1,6 +1,7 @@
 import Link from "next/link"
+import Head from "next/head" // Import Head component
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calculator, Percent, DollarSign } from "lucide-react"
+import { Calculator, Percent, HandCoinsIcon, DiffIcon, Store } from "lucide-react"
 
 export default function DashboardPage() {
   return (
@@ -9,7 +10,7 @@ export default function DashboardPage() {
         <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Kalkulator Laba Kotor</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DiffIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-sm text-muted-foreground mb-4">
@@ -27,7 +28,7 @@ export default function DashboardPage() {
         <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Perhitungan Harga Jual Per-Item</CardTitle>
-            <Calculator className="h-4 w-4 text-muted-foreground" />
+            <HandCoinsIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-sm text-muted-foreground mb-4">
@@ -56,6 +57,24 @@ export default function DashboardPage() {
               className="absolute inset-0 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <span className="sr-only">Kalkulator Diskon Akurat</span>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">UMKM Category</CardTitle>
+            <Store className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-muted-foreground mb-4">
+              Input laba kotor dan lihat kategori UMKM Anda
+            </div>
+            <Link 
+              href="/umkm"
+              className="absolute inset-0 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <span className="sr-only">UMKM Category</span>
             </Link>
           </CardContent>
         </Card>

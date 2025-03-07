@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Home, LogOut, FileText } from 'lucide-react'
+import { Home, LogOut, FileText, Store } from 'lucide-react'
 import { headers } from 'next/headers'
 
 export default async function MainLayout({
@@ -14,13 +14,10 @@ export default async function MainLayout({
     <div className="min-h-screen bg-background">
       <nav className="border-b">
         <div className="container flex h-14 items-center justify-between">
-          <ul className="flex space-x-6">
-            <li>
-              <Link href="/dashboard" className="inline-flex items-center text-sm font-medium transition-colors hover:text-primary">
-                <Home className="h-4 w-4 mr-2" />
-                Dashboard
-              </Link>
-            </li>
+          <Link href="/dashboard" className="text-sm font-medium transition-colors hover:text-primary">
+          Home
+          </Link>
+          <ul className="flex space-x-6 justify-center flex-grow">
             <li>
               <Link href="/gross-profit" className="text-sm font-medium transition-colors hover:text-primary">
                 Gross Profit
@@ -37,9 +34,13 @@ export default async function MainLayout({
               </Link>
             </li>
             <li>
-              <Link href="/reports" className="inline-flex items-center text-sm font-medium transition-colors hover:text-primary">
-                <FileText className="h-4 w-4 mr-2" />
+              <Link href="/reports" className=" text-sm font-medium transition-colors hover:text-primary">
                 Reports
+              </Link>
+            </li>
+            <li>
+              <Link href="/umkm" className="inline-flex items-center text-sm font-medium transition-colors hover:text-primary">
+                UMKM Status
               </Link>
             </li>
           </ul>
@@ -55,4 +56,4 @@ export default async function MainLayout({
       <main className="container py-6">{children}</main>
     </div>
   )
-} 
+}
