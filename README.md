@@ -1,5 +1,10 @@
 # To Run The Code
 
+## Cloning repository
+```bash
+git clone https://github.com/sultanfaturahman/SiNaik-Kalkulator-Bisnis.git
+```
+ 
 ## Install dependencies
 ```bash
 
