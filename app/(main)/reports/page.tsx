@@ -2,76 +2,241 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table"
+import { Download, FileText } from "lucide-react"
+import { jsPDF } from "jspdf"
 
-interface Calculation {
+interface CalculationRecord {
   id: number
   type: string
   date: string
-  inputs: {
-    revenue?: number
-    costOfGoodsSold?: number
-  }
-  results: {
-    grossProfit?: number
-    profitMargin?: number
-  }
+  inputs: Record<string, any>
+  results: Record<string, any>
 }
 
 export default function ReportsPage() {
-  const [calculations, setCalculations] = useState<Calculation[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [dateRange, setDateRange] = useState("all")
+  const [calculationType, setCalculationType] = useState("all")
+  const [calculations, setCalculations] = useState<CalculationRecord[]>([])
 
   useEffect(() => {
-    const fetchCalculations = async () => {
-      try {
-        const response = await fetch('/api/calculations')
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || `Error: ${response.status}`)
-        }
-        const data = await response.json()
-        setCalculations(data)
-      } catch (err) {
-        console.error('Fetch error:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load calculations')
-      } finally {
-        setLoading(false)
-      }
+    loadCalculations()
+  }, [dateRange, calculationType])
+
+  const loadCalculations = async () => {
+    try {
+      const params = new URLSearchParams({
+        dateRange: dateRange,
+        type: calculationType
+      })
+      
+      const response = await fetch(`/api/calculations?${params}`)
+      const { data, error } = await response.json()
+      
+      if (error) throw new Error(error)
+      if (!data) return
+
+      setCalculations(data.map((calc: any) => ({
+        id: Number(calc.id),
+        type: calc.type,
+        date: new Date(calc.date).toLocaleDateString(),
+        inputs: calc.inputs,
+        results: calc.results
+      })))
+    } catch (error) {
+      console.error("Error loading calculations:", error)
     }
-
-    fetchCalculations()
-  }, [])
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR'
-    }).format(amount)
   }
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error}</div>
+  const exportToCSV = () => {
+    const headers = ["Type", "Date", "Inputs", "Results"]
+    const csvData = calculations.map(calc => [
+      calc.type,
+      calc.date,
+      JSON.stringify(calc.inputs),
+      JSON.stringify(calc.results)
+    ])
+
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map(row => row.join(","))
+    ].join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv" })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "calculations-report.csv"
+    a.click()
+  }
+
+  const exportToPDF = () => {
+    const doc = new jsPDF()
+    
+    // Add company header
+    doc.setFillColor(52, 152, 219)
+    doc.rect(0, 0, 220, 40, "F")
+    
+    // Get page width
+    const pageWidth = doc.internal.pageSize.getWidth()
+
+    try {
+      // Add logo
+      const img = new Image()
+      img.src = '/linkproductivelogo.jpg'
+      doc.addImage(img, 'JPEG', 10, 5, 50, 30)
+    } catch (error) {
+      console.error('Error adding logo:', error)
+    }
+    
+    // Add title and subtitle
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(24)
+    doc.text("SiNaik App", pageWidth/2 + 25, 20, { align: "center" })
+    
+    doc.setFontSize(14)
+    doc.text("Laporan Keuangan", pageWidth/2 + 25, 30, { align: "center" })
+    
+    // Add date
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(10)
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, pageWidth - 20, 50, { align: "right" })
+    
+    let y = 70
+
+    calculations.forEach((calc, index) => {
+      if (y > 250) {
+        doc.addPage()
+        y = 20
+      }
+      
+      doc.setFillColor(240, 240, 240)
+      doc.rect(15, y-5, 180, 10, "F")
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "bold")
+      doc.text(`${calc.type} - ${calc.date}`, 20, y)
+      y += 15
+      
+      doc.setFont("helvetica", "bold")
+      doc.text("Inputs:", 20, y)
+      doc.setFont("helvetica", "normal")
+      y += 10
+      
+      Object.entries(calc.inputs).forEach(([key, value]) => {
+        doc.text(`${key}:`, 30, y)
+        doc.text(`${value}`, 100, y)
+        y += 7
+      })
+      
+      y += 5
+      
+      doc.setFont("helvetica", "bold")
+      doc.text("Results:", 20, y)
+      doc.setFont("helvetica", "normal")
+      y += 10
+      
+      Object.entries(calc.results).forEach(([key, value]) => {
+        doc.text(`${key}:`, 30, y)
+        doc.text(`${value}`, 100, y)
+        y += 7
+      })
+      
+      y += 5
+      doc.setDrawColor(200, 200, 200)
+      doc.line(20, y, 190, y)
+      y += 15
+    })
+    
+    const pageCount = doc.getNumberOfPages()
+    for(let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      doc.setFontSize(8)
+      doc.text(`Page ${i} of ${pageCount}`, 20, 290)
+    }
+
+    doc.save("business-calculations-report.pdf")
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Laporan Perhitungan</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {calculations.map((calc) => (
-            <div key={calc.id} className="border p-4 rounded-lg">
-              <div>Tanggal: {new Date(calc.date).toLocaleDateString('id-ID')}</div>
-              <div>Tipe: {calc.type}</div>
-              <div>Pendapatan: {formatCurrency(calc.inputs.revenue || 0)}</div>
-              <div>HPP: {formatCurrency(calc.inputs.costOfGoodsSold || 0)}</div>
-              <div>Laba Kotor: {formatCurrency(calc.results.grossProfit || 0)}</div>
-              <div>Margin: {calc.results.profitMargin?.toFixed(2)}%</div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Calculation Reports</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center mb-6">
+            <div className="space-x-4">
+              <select 
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+                className="border rounded p-2"
+              >
+                <option value="all">Periode</option>
+                <option value="today">Hari Ini</option>
+                <option value="week">Minggu Ini</option>
+                <option value="month">Bulan Ini</option>
+              </select>
+              <select
+                value={calculationType}
+                onChange={(e) => setCalculationType(e.target.value)}
+                className="border rounded p-2"
+              >
+                <option value="all">Seluruh Perhitungan</option>
+                <option value="gross-profit">Laba Kotor</option>
+                <option value="price-per-unit">Harga Per Unit</option>
+                <option value="discount">Diskon</option>
+              </select>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            <div className="flex items-center space-x-2">
+              <Button variant="default" onClick={exportToCSV}>
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button variant="default" onClick={exportToPDF}>
+                <FileText className="h-4 w-4 mr-2" />
+                Export PDF
+              </Button>
+            </div>
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tanggal</TableHead>
+                <TableHead>Jenis</TableHead>
+                <TableHead>Inputs</TableHead>
+                <TableHead>Hasil</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {calculations.map((calc, index) => (
+                <TableRow key={index}>
+                  <TableCell>{calc.date}</TableCell>
+                  <TableCell>{calc.type}</TableCell>
+                  <TableCell>
+                    {Object.entries(calc.inputs).map(([key, value]) => (
+                      <div key={key}>{`${key}: ${value}`}</div>
+                    ))}
+                  </TableCell>
+                  <TableCell>
+                    {Object.entries(calc.results).map(([key, value]) => (
+                      <div key={key}>{`${key}: ${value}`}</div>
+                    ))}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   )
 } 

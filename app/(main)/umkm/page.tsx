@@ -1,36 +1,51 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function UmkmPage() {
-  const [grossProfit, setGrossProfit] = useState<string>("")
-  const [category, setCategory] = useState('')
+  const [grossProfit, setGrossProfit] = useState<string>("");
+  const [category, setCategory] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/reports");
+        const data = await response.json();
+        if (data.totalGrossProfit) {
+          setGrossProfit(data.totalGrossProfit.toString());
+        }
+      } catch (error) {
+        console.error("Error fetching report data:", error);
+      }
+    };
+    fetchData();
+  }, []);
 
   const formatNumber = (value: string): string => {
-    const number = Number(value.replace(/\D/g, ''));
-    return new Intl.NumberFormat('id-ID').format(number);
+    const number = Number(value.replace(/\D/g, ""));
+    return new Intl.NumberFormat("id-ID").format(number);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const response = await fetch('/api/umkm', {
-      method: 'POST',
+    const response = await fetch("/api/umkm", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ grossProfit: grossProfit.replace(/\./g, '') }), // Send as a plain number
+      body: JSON.stringify({ grossProfit: grossProfit.replace(/\./g, "") }), // Send as a plain number
     });
 
     const data = await response.json();
     if (data.category) {
       setCategory(data.category);
     } else {
-      setCategory('Error determining category');
+      setCategory("Error determining category");
     }
-  }
+  };
 
   return (
     <>
@@ -41,19 +56,23 @@ export default function UmkmPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="grossProfit" className="text-sm font-medium leading-none">
+              <label
+                htmlFor="grossProfit"
+                className="text-sm font-medium leading-none"
+              >
                 Total Laba Kotor (Rp):
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black-500">Rp</span>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black-500">
+                  Rp
+                </span>
                 <Input
                   id="grossProfit"
-                  type="text" // Change to text to allow formatting
-                  placeholder="Masukan Total Laba Kotor selama 3 bulan"
-                  value={formatNumber(grossProfit)} // Format the displayed value
-                  onChange={(e) => setGrossProfit(e.target.value)} // Keep the raw input
-                  required
-                  className="pl-9" // Add padding to the left to accommodate the symbol
+                  type="text"
+                  placeholder="Laba Kotor secara real-time"
+                  value={formatNumber(grossProfit)}
+                  readOnly
+                  className="pl-9 bg-gray-100 cursor-not-allowed"
                 />
               </div>
               <Button type="submit" className="w-full">
@@ -65,5 +84,5 @@ export default function UmkmPage() {
         </CardContent>
       </Card>
     </>
-  )
+  );
 }
