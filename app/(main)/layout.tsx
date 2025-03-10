@@ -1,15 +1,32 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Home, LogOut, FileText, Store } from "lucide-react";
-import { headers } from "next/headers";
+import { useRouter } from "next/navigation";
 
-export default async function MainLayout({
+export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const headersList = await headers();
-  const pathname = headersList.get("x-invoke-path") || "";
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        router.push('/login');
+        router.refresh(); // Force a refresh of the router cache
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,13 +80,13 @@ export default async function MainLayout({
               </Link>
             </li>
           </ul>
-          <Link
-            href="/login"
+          <button
+            onClick={handleLogout}
             className="inline-flex items-center text-sm font-medium transition-colors hover:text-primary"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Logout
-          </Link>
+          </button>
         </div>
       </nav>
       <main className="container py-6">{children}</main>

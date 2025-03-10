@@ -1,45 +1,60 @@
 import { NextResponse } from 'next/server'
+import { PrismaClient } from '@prisma/client'
 import { hash } from 'bcryptjs'
-import { prisma } from '@/lib/db'
+import { validateRequest } from '@/lib/middlewares/validateRequest'
+import { registerSchema, type RegisterInput } from '@/lib/validations/auth'
 
-export async function POST(req: Request) {
+const prisma = new PrismaClient()
+
+async function registerHandler(data: RegisterInput) {
   try {
-    const { email, password, name } = await req.json()
-    
-    // Check if user exists
+    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email: data.email }
     })
 
     if (existingUser) {
       return NextResponse.json(
         { error: 'User already exists' },
-        { status: 400 }
+        { status: 409 }
       )
     }
 
     // Hash password
-    const hashedPassword = await hash(password, 10)
+    const hashedPassword = await hash(data.password, 12)
 
-    // Create user
+    // Create user with type field
     const user = await prisma.user.create({
       data: {
-        email,
+        name: data.name,
+        email: data.email,
         password: hashedPassword,
-        name,
+        businessName: data.businessName,
+        businessAddress: data.businessAddress,
+        type: data.selectedType // Add the type field
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        businessName: true,
+        businessAddress: true,
+        type: true,
+        createdAt: true
+      }
     })
 
-    return NextResponse.json({
-      user: {
-        email: user.email,
-        name: user.name,
-      },
-    })
-  } catch (error) {
     return NextResponse.json(
-      { error: 'Error creating user' },
+      { message: 'User created successfully', user },
+      { status: 201 }
+    )
+  } catch (error) {
+    console.error('Detailed registration error:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     )
   }
-} 
+}
+
+export const POST = validateRequest(registerSchema, registerHandler)

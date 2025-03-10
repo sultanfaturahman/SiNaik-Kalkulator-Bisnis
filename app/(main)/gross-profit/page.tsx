@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function GrossProfitCalculator() {
+export default function GrossProfitPage() {
   const [dateType, setDateType] = useState("daily");
   const [date, setDate] = useState("");
   const [month, setMonth] = useState("");
@@ -25,9 +25,7 @@ export default function GrossProfitCalculator() {
     avgMargin: number;
   } | null>(null);
 
-  const calculateGrossProfit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleCalculate = async () => {
     if (dateType === "daily") {
       const revenueNum = parseFloat(revenue);
       const costNum = parseFloat(costOfGoodsSold);
@@ -37,18 +35,23 @@ export default function GrossProfitCalculator() {
       setGrossProfit(profit);
       setProfitMargin(margin);
 
-      // Simpan data harian
       try {
-        await fetch("/api/calculations", {
+        const response = await fetch("/api/calculations", {
           method: "POST",
           body: JSON.stringify({
             type: "gross-profit-daily",
             inputs: { date, revenue: revenueNum, costOfGoodsSold: costNum },
-            results: { grossProfit: profit, profitMargin: margin },
-            userId: "user-id-here",
+            results: { grossProfit: profit, profitMargin: margin }
           }),
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json"
+          },
+          credentials: 'include' // Add this to include cookies
         });
+
+        if (!response.ok) {
+          throw new Error('Failed to save calculation');
+        }
       } catch (error) {
         console.error("Error saving daily calculation:", error);
       }
@@ -86,7 +89,7 @@ export default function GrossProfitCalculator() {
         <CardTitle>Kalkulator Laba Kotor</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={calculateGrossProfit} className="space-y-4">
+        <form onSubmit={handleCalculate} className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">
               Pilih Jenis Perhitungan

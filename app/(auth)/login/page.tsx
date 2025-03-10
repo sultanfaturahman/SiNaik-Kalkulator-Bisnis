@@ -12,35 +12,46 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(""); // Reset error state
+    setError("");
+    setIsLoading(true);
 
     try {
-      // Simulasi autentikasi (gantilah dengan API backend sesungguhnya)
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: 'include', // Important for cookie handling
       });
-
-      if (!response.ok) {
-        throw new Error("Akun yang dimasukan tidak sesuai");
-      }
 
       const data = await response.json();
 
-      // Redirect berdasarkan jenis akun
-      if (data.userType === "umkm") {
+      if (!response.ok) {
+        throw new Error(data.error || "Login gagal");
+      }
+
+      // No need to manually store token as it's now handled by cookies
+      const userType = data.userType.toLowerCase();
+
+      if (userType === "umkm") {
         router.push("/dashboard");
-      } else if (data.userType === "instansi") {
+      } else if (userType === "instansi") {
         router.push("/adminDashboard");
       } else {
-        throw new Error("Unknown account type");
+        throw new Error(`Invalid user type: ${userType}`);
       }
+
+      // Force a router refresh to update the authentication state
+      router.refresh();
+
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      console.error('Login error:', err);
+      setError(err instanceof Error ? err.message : "Login gagal");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,9 +67,6 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
               <Input
                 id="email"
                 type="email"
@@ -82,8 +90,8 @@ export default function LoginPage() {
               />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" className="w-full">
-              Sign In
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button>
             <div className="text-sm">
               Don't have an account?{" "}
