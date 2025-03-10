@@ -19,3 +19,16 @@ model Calculation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 } 
+
+model User {
+  id                Int     @id @default(autoincrement())
+  name              String
+  email             String  @unique
+  passwordHash      String
+  userType          String  @default("umkm") @db.VarChar(10)
+  companyName       String?
+  companyAddress    String?
+  institutionName   String?
+  institutionAddress String?
+  createdAt        DateTime @default(now())
+}

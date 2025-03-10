@@ -179,20 +179,20 @@ export default function ReportsPage() {
                 onChange={(e) => setDateRange(e.target.value)}
                 className="border rounded p-2"
               >
-                <option value="all">All Time</option>
-                <option value="today">Today</option>
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
+                <option value="all">Periode</option>
+                <option value="today">Hari Ini</option>
+                <option value="week">Minggu Ini</option>
+                <option value="month">Bulan Ini</option>
               </select>
               <select
                 value={calculationType}
                 onChange={(e) => setCalculationType(e.target.value)}
                 className="border rounded p-2"
               >
-                <option value="all">All Calculations</option>
-                <option value="gross-profit">Gross Profit</option>
-                <option value="price-per-unit">Price per Unit</option>
-                <option value="discount">Discount</option>
+                <option value="all">Seluruh Perhitungan</option>
+                <option value="gross-profit">Laba Kotor</option>
+                <option value="price-per-unit">Harga Per Unit</option>
+                <option value="discount">Diskon</option>
               </select>
             </div>
             <div className="flex items-center space-x-2">
@@ -210,10 +210,10 @@ export default function ReportsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Type</TableHead>
+                <TableHead>Tanggal</TableHead>
+                <TableHead>Jenis</TableHead>
                 <TableHead>Inputs</TableHead>
-                <TableHead>Results</TableHead>
+                <TableHead>Hasil</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
