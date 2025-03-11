@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatRupiah, parseRupiah } from "@/lib/utils"
 
 export default function PricePerUnitCalculator() {
   const [totalCost, setTotalCost] = useState("")
@@ -12,12 +13,12 @@ export default function PricePerUnitCalculator() {
   const [pricePerUnit, setPricePerUnit] = useState<number | null>(null)
 
   const calculatePricePerUnit = () => {
-    const cost = Number.parseFloat(totalCost)
-    const units = Number.parseFloat(numberOfUnits)
-    const profit = Number.parseFloat(desiredProfit)
+    const cost = Number(parseRupiah(totalCost))
+    const units = Number(numberOfUnits)
+    const profit = Number(parseRupiah(desiredProfit))
 
     if (isNaN(cost) || isNaN(units) || isNaN(profit) || units === 0) {
-      alert("Please enter valid numbers")
+      alert("Mohon masukan angka yang valid")
       return
     }
 
@@ -27,25 +28,27 @@ export default function PricePerUnitCalculator() {
 
   return (
     <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Kalkulator Harga Per-Unit</CardTitle>
-      </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div>
-            <label htmlFor="totalCost" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="totalCost" className="block text-sm font-medium">
               Total Biaya
             </label>
-            <Input
-              id="totalCost"
-              type="number"
-              value={totalCost}
-              onChange={(e) => setTotalCost(e.target.value)}
-              placeholder="Masukan Total Biaya"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2">Rp</span>
+              <Input
+                id="totalCost"
+                type="text"
+                value={formatRupiah(totalCost)}
+                onChange={(e) => setTotalCost(parseRupiah(e.target.value))}
+                placeholder="Masukan Total Biaya"
+                className="pl-12"
+              />
+            </div>
           </div>
+
           <div>
-            <label htmlFor="numberOfUnits" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="numberOfUnits" className="block text-sm font-medium">
               Jumlah Unit
             </label>
             <Input
@@ -56,22 +59,32 @@ export default function PricePerUnitCalculator() {
               placeholder="Masukan Jumlah Unit"
             />
           </div>
+
           <div>
-            <label htmlFor="desiredProfit" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="desiredProfit" className="block text-sm font-medium">
               Laba Yang Diinginkan
             </label>
-            <Input
-              id="desiredProfit"
-              type="number"
-              value={desiredProfit}
-              onChange={(e) => setDesiredProfit(e.target.value)}
-              placeholder="Masukan Laba Yang Diinginkan"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2">Rp</span>
+              <Input
+                id="desiredProfit"
+                type="text"
+                value={formatRupiah(desiredProfit)}
+                onChange={(e) => setDesiredProfit(parseRupiah(e.target.value))}
+                placeholder="Masukan Laba Yang Diinginkan"
+                className="pl-12"
+              />
+            </div>
           </div>
+
           <Button onClick={calculatePricePerUnit}>Hitung</Button>
+
           {pricePerUnit !== null && (
             <div className="mt-4">
-              <p>Harga Per Unit: Rp{pricePerUnit.toFixed(2)}</p>
+              <p className="flex justify-between">
+                <span>Harga Per Unit:</span>
+                <span>Rp {formatRupiah(pricePerUnit)}</span>
+              </p>
             </div>
           )}
         </div>

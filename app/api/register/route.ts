@@ -8,7 +8,6 @@ const prisma = new PrismaClient()
 
 async function registerHandler(data: RegisterInput) {
   try {
-    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email: data.email }
     })
@@ -20,10 +19,8 @@ async function registerHandler(data: RegisterInput) {
       )
     }
 
-    // Hash password
     const hashedPassword = await hash(data.password, 12)
 
-    // Create user with type field
     const user = await prisma.user.create({
       data: {
         name: data.name,
@@ -31,7 +28,10 @@ async function registerHandler(data: RegisterInput) {
         password: hashedPassword,
         businessName: data.businessName,
         businessAddress: data.businessAddress,
-        type: data.selectedType // Add the type field
+        type: data.selectedType,
+        // For now, we'll leave emailVerified as null
+        // You should implement email verification logic here
+        emailVerified: null
       },
       select: {
         id: true,
@@ -40,12 +40,21 @@ async function registerHandler(data: RegisterInput) {
         businessName: true,
         businessAddress: true,
         type: true,
+        emailVerified: true,
         createdAt: true
       }
     })
 
+    // Here you would typically:
+    // 1. Generate a verification token
+    // 2. Send verification email
+    // 3. Store the token in the database
+
     return NextResponse.json(
-      { message: 'User created successfully', user },
+      { 
+        message: 'User created successfully. Please verify your email.',
+        user 
+      },
       { status: 201 }
     )
   } catch (error) {

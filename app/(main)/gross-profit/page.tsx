@@ -11,6 +11,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { formatRupiah, parseRupiah } from "@/lib/utils";
 
 export default function GrossProfitPage() {
   const [dateType, setDateType] = useState("daily");
@@ -35,50 +36,41 @@ export default function GrossProfitPage() {
       setGrossProfit(profit);
       setProfitMargin(margin);
 
+      const calculationData = {
+        type: "kalkulator-laba-kotor-harian",
+        inputs: { 
+          date: date,
+          revenue: revenueNum, 
+          costOfGoodsSold: costNum 
+        },
+        results: { 
+          grossProfit: profit, 
+          profitMargin: margin 
+        }
+      };
+
+      console.log('Saving calculation:', calculationData);
+
       try {
         const response = await fetch("/api/calculations", {
           method: "POST",
-          body: JSON.stringify({
-            type: "gross-profit-daily",
-            inputs: { date, revenue: revenueNum, costOfGoodsSold: costNum },
-            results: { grossProfit: profit, profitMargin: margin }
-          }),
+          body: JSON.stringify(calculationData),
           headers: { 
             "Content-Type": "application/json"
           },
-          credentials: 'include' // Add this to include cookies
+          credentials: 'include'
         });
 
         if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Save response error:', errorData);
           throw new Error('Failed to save calculation');
         }
+
+        const savedData = await response.json();
+        console.log('Save successful:', savedData);
       } catch (error) {
         console.error("Error saving daily calculation:", error);
-      }
-    } else {
-      // Ambil data laba kotor bulanan
-      try {
-        const response = await fetch(
-          `/api/calculations?month=${month}&type=gross-profit-daily`
-        );
-        const data = await response.json();
-
-        if (data.length > 0) {
-          const totalProfit = data.reduce(
-            (acc: number, entry: any) => acc + entry.results.grossProfit,
-            0
-          );
-          const avgMargin =
-            data.reduce(
-              (acc: number, entry: any) => acc + entry.results.profitMargin,
-              0
-            ) / data.length;
-          setMonthlySummary({ totalProfit, avgMargin });
-        } else {
-          setMonthlySummary(null);
-        }
-      } catch (error) {
-        console.error("Error fetching monthly data:", error);
       }
     }
   };
@@ -131,26 +123,32 @@ export default function GrossProfitPage() {
             <>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Pendapatan</label>
-                <Input
-                  type="number"
-                  placeholder="Masukan Pendapatan"
-                  value={revenue}
-                  onChange={(e) => setRevenue(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2">Rp</span>
+                  <Input
+                    type="text"
+                    placeholder="Masukan Pendapatan"
+                    value={formatRupiah(revenue)}
+                    onChange={(e) => setRevenue(parseRupiah(e.target.value))}
+                    required
+                    className="pl-12"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Harga Pokok Penjualan
-                </label>
-                <Input
-                  type="number"
-                  placeholder="Masukan HPP"
-                  value={costOfGoodsSold}
-                  onChange={(e) => setCostOfGoodsSold(e.target.value)}
-                  required
-                />
+                <label className="text-sm font-medium">Harga Pokok Penjualan</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2">Rp</span>
+                  <Input
+                    type="text"
+                    placeholder="Masukan HPP"
+                    value={formatRupiah(costOfGoodsSold)}
+                    onChange={(e) => setCostOfGoodsSold(parseRupiah(e.target.value))}
+                    required
+                    className="pl-12"
+                  />
+                </div>
               </div>
             </>
           )}
@@ -164,7 +162,7 @@ export default function GrossProfitPage() {
           <div className="mt-6 space-y-2">
             <div className="flex justify-between">
               <span className="font-medium">Laba Kotor:</span>
-              <span>Rp{grossProfit.toFixed(2)}</span>
+              <span>Rp {formatRupiah(grossProfit)}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium">Margin Laba:</span>

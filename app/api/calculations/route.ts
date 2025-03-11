@@ -1,88 +1,67 @@
-import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { prisma } from '@/lib/db'
-import { verifyJwtToken } from '@/lib/jwt'
-
-export const runtime = 'nodejs'
-
-async function getUserFromToken(request: Request) {
-  const cookieStore = await cookies()
-  const token = await cookieStore.get('token')?.value
-  if (!token) {
-    return null
-  }
-  
-  try {
-    const payload = await verifyJwtToken(token)
-    return payload.userId
-  } catch (error) {
-    return null
-  }
-}
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
-    const userId = await getUserFromToken(request)
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get('type');
+    
+    console.log('GET request params:', { type, userId: session.user.id });
 
     const calculations = await prisma.calculation.findMany({
       where: {
-        userId
+        userId: session.user.id,
+        type: type || undefined,
       },
       orderBy: {
-        date: 'desc'
-      }
-    })
+        createdAt: 'desc',
+      },
+    });
 
-    return NextResponse.json(calculations)
+    console.log('Found calculations:', calculations);
+    
+    return NextResponse.json(calculations);
   } catch (error) {
-    console.error('API Error:', error)
+    console.error('GET calculations error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch calculations' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch calculations' },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const userId = await getUserFromToken(request)
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { type, inputs, results } = body
+    const body = await request.json();
+    console.log('POST request body:', body);
 
     const calculation = await prisma.calculation.create({
       data: {
-        type,
-        inputs,
-        results,
-        date: new Date(),
-        updatedAt: new Date(),
-        user: {
-          connect: {
-            id: userId
-          }
-        }
-      }
-    })
+        ...body,
+        userId: session.user.id,
+      },
+    });
 
-    return NextResponse.json(calculation, { status: 201 })
+    console.log('Created calculation:', calculation);
+    
+    return NextResponse.json(calculation);
   } catch (error) {
-    console.error('API Error:', error)
+    console.error('POST calculation error:', error);
     return NextResponse.json(
-      { error: 'Failed to create calculation' },
+      { error: error instanceof Error ? error.message : 'Failed to save calculation' },
       { status: 500 }
-    )
+    );
   }
 }

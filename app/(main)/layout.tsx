@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Home, LogOut, FileText, Store } from "lucide-react";
+import { Home, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function MainLayout({
@@ -66,7 +66,7 @@ export default function MainLayout({
             <li>
               <Link
                 href="/reports"
-                className=" text-sm font-medium transition-colors hover:text-primary"
+                className="text-sm font-medium transition-colors hover:text-primary"
               >
                 Laporan
               </Link>
@@ -80,13 +80,21 @@ export default function MainLayout({
               </Link>
             </li>
           </ul>
-          <button
-            onClick={handleLogout}
-            className="inline-flex items-center text-sm font-medium transition-colors hover:text-primary"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </button>
+          <div className="flex items-center space-x-4">
+            <Link
+              href="/profile"
+              className="inline-flex items-center text-sm font-medium transition-colors hover:text-primary"
+            >
+              <User className="h-4 w-4 mr-2" />
+              Profile
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </nav>
       <main className="container py-6">{children}</main>

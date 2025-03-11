@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatRupiah, parseRupiah } from "@/lib/utils"
 
 export default function DiscountCalculator() {
   const [originalPrice, setOriginalPrice] = useState("")
@@ -12,11 +13,11 @@ export default function DiscountCalculator() {
   const [savings, setSavings] = useState<number | null>(null)
 
   const calculateDiscount = () => {
-    const price = Number.parseFloat(originalPrice)
-    const discount = Number.parseFloat(discountPercentage)
+    const price = Number(parseRupiah(originalPrice))
+    const discount = Number(discountPercentage)
 
     if (isNaN(price) || isNaN(discount)) {
-      alert("Please enter valid numbers")
+      alert("Mohon masukan angka yang valid")
       return
     }
 
@@ -35,16 +36,20 @@ export default function DiscountCalculator() {
       <CardContent>
         <div className="space-y-4">
           <div>
-            <label htmlFor="originalPrice" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="originalPrice" className="block text-sm font-medium">
               Harga Awal
             </label>
-            <Input
-              id="originalPrice"
-              type="number"
-              value={originalPrice}
-              onChange={(e) => setOriginalPrice(e.target.value)}
-              placeholder="Masukan Harga Awal"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2">Rp</span>
+              <Input
+                id="originalPrice"
+                type="text"
+                value={formatRupiah(originalPrice)}
+                onChange={(e) => setOriginalPrice(parseRupiah(e.target.value))}
+                placeholder="Masukan Harga Awal"
+                className="pl-12"
+              />
+            </div>
           </div>
           <div>
             <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700">
@@ -59,10 +64,16 @@ export default function DiscountCalculator() {
             />
           </div>
           <Button onClick={calculateDiscount}>Hitung</Button>
-          {discountedPrice !== null && savings !== null && (
-            <div className="mt-4">
-              <p>Harga Setelah Diskon: Rp{discountedPrice.toFixed(2)}</p>
-              <p>Anda Menghemat: Rp{savings.toFixed(2)}</p>
+          {discountedPrice !== null && (
+            <div className="mt-4 space-y-2">
+              <div className="flex justify-between">
+                <span>Harga Setelah Diskon:</span>
+                <span>Rp {formatRupiah(discountedPrice)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Penghematan:</span>
+                <span>Rp {formatRupiah(savings!)}</span>
+              </div>
             </div>
           )}
         </div>
