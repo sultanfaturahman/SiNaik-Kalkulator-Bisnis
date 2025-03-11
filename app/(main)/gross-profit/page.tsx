@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,24 @@ export default function GrossProfitPage() {
     totalProfit: number;
     avgMargin: number;
   } | null>(null);
+  const [dailyAccumulated, setDailyAccumulated] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (dateType === "daily" && date) {
+      fetch(`/api/calculations?date=${date}&type=gross-profit-daily`)
+        .then((res) => res.json())
+        .then((data) => {
+          const totalAccumulated = data.reduce(
+            (acc: number, entry: any) => acc + entry.results.grossProfit,
+            0
+          );
+          setDailyAccumulated(totalAccumulated);
+        })
+        .catch((error) =>
+          console.error("Error fetching daily accumulation:", error)
+        );
+    }
+  }, [date, dateType]);
 
   const handleCalculate = async () => {
     if (dateType === "daily") {
@@ -81,7 +99,13 @@ export default function GrossProfitPage() {
         <CardTitle>Kalkulator Laba Kotor</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleCalculate} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCalculate();
+          }}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <label className="text-sm font-medium">
               Pilih Jenis Perhitungan
@@ -135,7 +159,6 @@ export default function GrossProfitPage() {
                   />
                 </div>
               </div>
-
               <div className="space-y-2">
                 <label className="text-sm font-medium">Harga Pokok Penjualan</label>
                 <div className="relative">
@@ -158,11 +181,11 @@ export default function GrossProfitPage() {
           </Button>
         </form>
 
-        {grossProfit !== null && dateType === "daily" && (
+        {dailyAccumulated !== null && dateType === "daily" && (
           <div className="mt-6 space-y-2">
             <div className="flex justify-between">
               <span className="font-medium">Laba Kotor:</span>
-              <span>Rp {formatRupiah(grossProfit)}</span>
+              <span>Rp {formatRupiah(grossProfit || 0)}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium">Margin Laba:</span>
@@ -175,7 +198,7 @@ export default function GrossProfitPage() {
           <div className="mt-6 space-y-2">
             <div className="flex justify-between">
               <span className="font-medium">Total Laba Kotor Bulanan:</span>
-              <span>Rp{monthlySummary.totalProfit.toFixed(2)}</span>
+              <span>Rp {formatRupiah(monthlySummary.totalProfit)}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium">Rata-rata Margin Laba:</span>
