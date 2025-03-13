@@ -31,21 +31,32 @@ export default function ProfilePage() {
       return;
     }
 
-    if (status === "authenticated") {
+    if (status === "authenticated" && session.user?.email) {
       fetchProfile();
     }
-  }, [status, router]);
+  }, [status, session, router]);
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch("/api/profile");
-      if (!response.ok) throw new Error("Failed to fetch profile");
+      console.log("Fetching profile for:", session?.user?.email); // Debug log
+      const response = await fetch("/api/profile", {
+        headers: {
+          'Authorization': `Bearer ${session?.user?.email}` // Add email to headers
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch profile");
+      }
+      
       const data = await response.json();
+      console.log("Fetched profile:", data); // Debug log
       setProfile(data);
       setEditedProfile(data);
     } catch (err) {
-      setError("Failed to load profile");
-      console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to load profile");
+      console.error("Profile fetch error:", err);
     } finally {
       setLoading(false);
     }

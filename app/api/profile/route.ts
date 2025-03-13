@@ -3,9 +3,11 @@ import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
 import { authOptions } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
+    
+    console.log("Current session:", session); // Debug log
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -14,8 +16,11 @@ export async function GET() {
       );
     }
 
+    const userEmail = session.user.email;
+    console.log("Fetching profile for email:", userEmail); // Debug log
+
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: userEmail },
       select: {
         name: true,
         email: true,
@@ -24,6 +29,8 @@ export async function GET() {
         type: true,
       }
     });
+
+    console.log("Found user:", user); // Debug log
 
     if (!user) {
       return NextResponse.json(
@@ -59,11 +66,12 @@ export async function PUT(request: Request) {
       );
     }
 
+    const userEmail = session.user.email;
     const body = await request.json();
     const { name, businessName, businessAddress } = body;
 
     const updatedUser = await prisma.user.update({
-      where: { email: session.user.email },
+      where: { email: userEmail },
       data: {
         name,
         businessName,
